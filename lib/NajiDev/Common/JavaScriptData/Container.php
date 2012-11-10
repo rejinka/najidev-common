@@ -2,9 +2,8 @@
 
 namespace NajiDev\Common\JavaScriptData;
 
-use \Exception;
-
 use
+	\NajiDev\Common\Exception\ElementNotFoundException,
 	\NajiDev\Common\Exception\InvalidArgumentException,
 	\NajiDev\Common\Exception\UnsupportedException,
 	\NajiDev\Common\Helper\ArrayHelper
@@ -30,11 +29,8 @@ class Container
 		{
 			$this->getRecursive($key, $this->data);
 		}
-		catch (Exception $e)
+		catch (ElementNotFoundException $e)
 		{
-			if ($e instanceof InvalidArgumentException)
-				throw $e;
-
 			$this->set($key, $value);
 		}
 	}
@@ -62,7 +58,7 @@ class Container
 			$this->getRecursive($key, $this->data);
 			$this->data = $this->setRecursive($key, $value);
 		}
-		catch (Exception $e)
+		catch (ElementNotFoundException $e)
 		{
 			$this->data = array_merge_recursive($this->data, $this->setRecursive($key, $value));
 		}
@@ -82,7 +78,7 @@ class Container
 		{
 			return $this->getRecursive($key, $this->data);
 		}
-		catch (Exception $e)
+		catch (ElementNotFoundException $e)
 		{
 			return $defaultValue;
 		}
@@ -102,11 +98,11 @@ class Container
 
 			$data = $this->removeRecursive($key, $this->data);
 			$this->data = ArrayHelper::array_filter_recursive($data, function ($value)
-				{
-					return !empty($value);
-				});
+			{
+				return !empty($value);
+			});
 		}
-		catch (Exception $e) { }
+		catch (ElementNotFoundException $e) { }
 	}
 
 	/**
@@ -164,11 +160,16 @@ class Container
 		$key = explode('.', $key);
 
 		if (1 === count($key))
+		{
+			if (!array_key_exists($key[0], $data))
+				throw new ElementNotFoundException();
+
 			return $data[$key[0]];
+		}
 
 		$first = array_shift($key);
 		if (!array_key_exists($first, $data))
-			throw new Exception;
+			throw new ElementNotFoundException;
 
 		return $this->getRecursive(implode('.', $key), $data[$first]);
 	}
